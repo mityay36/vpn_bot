@@ -10,6 +10,6 @@ PAYMENTS_TOKEN = os.getenv('PAYMASTER_TOKEN')
 CONTACT = os.getenv('CONTACT')
 PRICE = int(os.getenv('PRICE'))
 PRICE_LABELED = types.LabeledPrice(
-    label="Подписка на 1 месяц", amount=200*100
+    label="Подписка на 1 месяц", amount=PRICE*100
 )
 URL = os.getenv('URL')

@@ -7,6 +7,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import (
     Message, ReplyKeyboardMarkup, KeyboardButton, FSInputFile
 )
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 import config
 
@@ -84,20 +85,20 @@ async def about(message: Message):
     await message.answer(text)
 
 
-@dp.message(lambda message: message.text == "Купить подписку")
-async def buy(message: types.Message):
-    if config.PAYMENTS_TOKEN.split(':')[1] == 'TEST':
-        await bot.send_message(message.chat.id, "Тестовый платеж.")
-
-    await bot.send_invoice(message.chat.id,
-                           title="Подписка на VPN",
-                           description="Активация подписки VPN на 1 месяц",
-                           provider_token=config.PAYMENTS_TOKEN,
-                           currency="rub",
-                           is_flexible=False,
-                           prices=[config.PRICE],
-                           start_parameter="one-month-subscription",
-                           payload="test-invoice-payload")
+# @dp.message(lambda message: message.text == "Купить подписку")
+# async def buy(message: types.Message):
+#     if config.PAYMENTS_TOKEN.split(':')[1] == 'TEST':
+#         await bot.send_message(message.chat.id, "Тестовый платеж.")
+#
+#     await bot.send_invoice(message.chat.id,
+#                            title="Подписка на VPN",
+#                            description="Активация подписки VPN на 1 месяц",
+#                            provider_token=config.PAYMENTS_TOKEN,
+#                            currency="rub",
+#                            is_flexible=False,
+#                            prices=[config.PRICE_LABELED],
+#                            start_parameter="one-month-subscription",
+#                            payload="test-invoice-payload")
 
 
 # pre checkout  (must be answered in 10 seconds)
@@ -120,7 +121,9 @@ async def successful_payment(message: types.Message):
             f"Платеж на сумму {message.successful_payment.total_amount // 100}\
 {message.successful_payment.currency} прошел успешно."
         )
-        # Тут должен быть кусок с отправкой конфига
+
+        # Тут должен быть кусок с отправкой конфига или его продлением.
+
         await bot.send_message(message.chat.id, 'Пу-пу-пу...')
     else:
         print(f'Что-то пошло не так. Информамция о покупке - {payment}')
@@ -128,6 +131,61 @@ async def successful_payment(message: types.Message):
             message.chat.id,
             f'Что-то пошло не так. Обратитесь в поддержку. Ответ - {payment}'
         )
+
+
+@dp.message(lambda message: message.text == "Купить подписку")
+async def cmd_random(message: types.Message):
+    builder = InlineKeyboardBuilder()
+    builder.add(types.InlineKeyboardButton(
+        text="Продлить",
+        callback_data="extend_buy")
+    )
+    builder.add(types.InlineKeyboardButton(
+        text="Купить новый",
+        callback_data="new_buy")
+    )
+    await message.answer(
+        "Вы хотите продлить подписку или приобрести новый конфиг?",
+        reply_markup=builder.as_markup()
+    )
+
+
+@dp.callback_query(F.data == "extend_buy")
+async def send_random_value(callback: types.CallbackQuery):
+    # тут должен быть запрос к API для получения кол-ва туннелей пользователя
+    # представим, что запрос прошел и мы получили tunnel_list
+
+    tunnel_list = [('urmomgay_wg0', 'alive'), ('vasya1_wg0', 'dead'), ('remotecontrol_of_america_wg0', 'dead')]
+    text = 'Выберете номер конфига, который хотите продлить: \n'
+    alive_emoji = '🟢'
+    dead_emoji = '🔴'
+    builder = InlineKeyboardBuilder()
+    for num, tunnel in enumerate(tunnel_list):
+
+        text += ''.join(f'{num+1}. {tunnel[0]}  |  Статус - {alive_emoji if tunnel[1] == "alive" else dead_emoji}\n')
+
+        builder.add(types.InlineKeyboardButton(
+            text=f"{num+1}",
+            callback_data="extend_buy_2")
+        )
+
+    await callback.message.answer(text, reply_markup=builder.as_markup())
+
+
+@dp.callback_query(F.data == "new_buy")
+async def process_payment(callback: types.CallbackQuery):
+    if config.PAYMENTS_TOKEN.split(':')[1] == 'TEST':
+        await bot.send_message(callback.message.chat.id, "Тестовый платеж.")
+
+    await bot.send_invoice(callback.message.chat.id,
+                           title="Подписка на VPN",
+                           description="Активация подписки VPN на 1 месяц",
+                           provider_token=config.PAYMENTS_TOKEN,
+                           currency="rub",
+                           is_flexible=False,
+                           prices=[config.PRICE_LABELED],
+                           start_parameter="one-month-subscription",
+                           payload="test-invoice-payload")
 
 
 # echo bot

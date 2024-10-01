@@ -10,6 +10,7 @@ from aiogram.types import (
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 import config
+from logic import get_tunnel_list
 
 
 # log
@@ -155,11 +156,8 @@ async def send_random_value(callback: types.CallbackQuery):
     # тут должен быть запрос к API для получения кол-ва туннелей пользователя
     # представим, что запрос прошел и мы получили tunnel_list
 
-    tunnel_list = [
-        ('urmomgay_wg0', 'alive'),
-        ('vasya1_wg0', 'dead'),
-        ('remotecontrol_of_america_wg0', 'dead')
-    ]
+    # tunnel_list = [(name1, status1), (name2, status2), ...]
+    tunnel_list = get_tunnel_list(callback.message.chat.id)
     text = 'Выберете номер конфига, который хотите продлить: \n'
     alive_emoji = '🟢'
     dead_emoji = '🔴'

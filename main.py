@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 import uuid
+import aiohttp
 
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
@@ -26,23 +27,6 @@ Configuration.account_id = config.MARKET_ID
 Configuration.secret_key = config.YOKASSA_API_KEY
 
 
-async def create_payment(price):
-    await Payment.create({
-        "amount": {
-            "value": price+'.00',
-            "currency": "RUB"
-        },
-        "payment_method_data": {
-            "type": "sberbank",
-        },
-        "confirmation": {
-            "type": "redirect",
-            "return_url": "https://t.me/vpnachos_bot"
-        },
-        "description": "Заказ №72"
-    }, str(uuid.uuid4()))
-
-
 @dp.message(Command("start"))
 async def start_command(message: Message):
     # Создаем кнопки
@@ -62,7 +46,7 @@ async def start_command(message: Message):
 
 
 @dp.message(lambda message: message.text == "Инструкция по установке")
-async def help_command(message: Message, state: FSMContext):
+async def installation_guide(message: Message):
     text = f'''
 1. Установите WireGuard
 [Официальная ссылка]({config.URL})
@@ -114,34 +98,8 @@ async def pre_checkout_query(pre_checkout_q: types.PreCheckoutQuery):
     await bot.answer_pre_checkout_query(pre_checkout_q.id, ok=True)
 
 
-# successful payment
-@dp.message(lambda message: message.successful_payment is not None)
-async def successful_payment(message: types.Message):
-    print("SUCCESSFUL PAYMENT:")
-    payment = message.successful_payment
-    if payment:
-        payment_info = message.successful_payment.as_dict()
-        for k, v in payment_info.items():
-            print(f"{k} = {v}")
-        await bot.send_message(
-            message.chat.id,
-            f"Платеж на сумму {message.successful_payment.total_amount // 100}\
-{message.successful_payment.currency} прошел успешно."
-        )
-
-        # Тут должен быть кусок с отправкой конфига или его продлением.
-
-        await bot.send_message(message.chat.id, 'Пу-пу-пу...')
-    else:
-        print(f'Что-то пошло не так. Информамция о покупке - {payment}')
-        await bot.send_message(
-            message.chat.id,
-            f'Что-то пошло не так. Обратитесь в поддержку. Ответ - {payment}'
-        )
-
-
 @dp.message(lambda message: message.text == "Купить подписку")
-async def cmd_random(message: types.Message):
+async def pay_options(message: types.Message):
     builder = InlineKeyboardBuilder()
     builder.add(types.InlineKeyboardButton(
         text="Продлить",
@@ -158,11 +116,13 @@ async def cmd_random(message: types.Message):
 
 
 @dp.callback_query(F.data == "extend_buy")
-async def send_random_value(callback: types.CallbackQuery):
+async def extend_buy_options(callback: types.CallbackQuery, state: FSMContext):
+
     # тут должен быть запрос к API для получения кол-ва туннелей пользователя
     # представим, что запрос прошел и мы получили tunnel_list
 
     # tunnel_list = [(name1, status1), (name2, status2), ...]
+
     tunnel_list = get_tunnel_list(callback.message.chat.id)
     text = 'Выберете номер конфига, который хотите продлить: \n'
     alive_emoji = '🟢'
@@ -182,10 +142,22 @@ async def send_random_value(callback: types.CallbackQuery):
     await callback.message.answer(text, reply_markup=builder.as_markup())
 
 
+@dp.callback_query(F.data == "extend_buy")
+async def extend_buy_process(callback: types.CallbackQuery, state: FSMContext):
+
+
+
+    ...
+
+
 @dp.callback_query(F.data == "new_buy")
 async def process_payment(callback: types.CallbackQuery, state: FSMContext):
+
     if config.PAYMENTS_TOKEN.split(':')[1] == 'TEST':
         await bot.send_message(callback.message.chat.id, "Тестовый платеж.")
+
+    await state.update_data(new_buy_state=0)
+
     payment = Payment.create({
         "amount": {
             "value": str(config.PRICE) + '.00',
@@ -203,8 +175,10 @@ async def process_payment(callback: types.CallbackQuery, state: FSMContext):
     }, str(uuid.uuid4()))
     payment_data = json.loads(payment.json())
     payment_id = payment_data['id']
+
     await state.update_data(payment_id=payment_id)
 
+    print(payment_data)
     payment_url = (payment_data['confirmation'])['confirmation_url']
     text = f"""Произведите оплату по ссылке:\
     {payment_url} \
@@ -241,11 +215,15 @@ async def check_payment(callback: types.CallbackQuery, state: FSMContext):
                 callback.message.chat.id,
                 "Ваш платеж прошел успешно! Спасибо за покупку."
             )
-
-            # Тут можно отправить конфиг или продлить услугу
-            # Пример:
-            # await send_vpn_config(callback.message.chat.id)
-            await bot.send_message(callback.message.chat.id, 'Пу-пу-пу...')
+            perm_state = await state.get_data()
+            payment_status = perm_state.get('new_buy_state')
+            if payment_info.paid:
+                if payment_status == 0:
+                    await bot.send_message(callback.message.chat.id, 'Первичная отправка конфига')
+                    # Здесь должна быть некоторая логика формирования и выдачи конфига юзеру
+                    await state.update_data(new_buy_state=1)
+                else:
+                    await bot.send_message(callback.message.chat.id, 'Повторная отправка конфига')
 
         elif payment_info.status in ["pending", "waiting_for_capture"]:
             await bot.send_message(

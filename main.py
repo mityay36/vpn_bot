@@ -1,5 +1,7 @@
 import asyncio
+import json
 import logging
+import uuid
 
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
@@ -8,10 +10,10 @@ from aiogram.types import (
     Message, ReplyKeyboardMarkup, KeyboardButton, FSInputFile
 )
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+from yookassa import Payment, Configuration
 
 import config
 from logic import get_tunnel_list
-
 
 # log
 logging.basicConfig(level=logging.INFO)
@@ -19,6 +21,26 @@ logging.basicConfig(level=logging.INFO)
 # init
 bot = Bot(token=config.TELEGRAM_TOKEN)
 dp = Dispatcher()
+
+Configuration.account_id = config.MARKET_ID
+Configuration.secret_key = config.YOKASSA_API_KEY
+
+
+async def create_payment(price):
+    await Payment.create({
+        "amount": {
+            "value": price+'.00',
+            "currency": "RUB"
+        },
+        "payment_method_data": {
+            "type": "sberbank",
+        },
+        "confirmation": {
+            "type": "redirect",
+            "return_url": "https://t.me/vpnachos_bot"
+        },
+        "description": "Заказ №72"
+    }, str(uuid.uuid4()))
 
 
 @dp.message(Command("start"))
@@ -78,28 +100,12 @@ async def about(message: Message):
 доступный прайс для каждого. Серверы находятся в Латвии, что \
 обеспечивает максимальную скорость передачи трафика 🚀
 
-💳 Подписка составляет {config.PRICE} руб/мес. Оплату можно \
-производить в боте, либо написав лично нам.
+💳 Подписка составляет {config.PRICE} руб/мес. Оплата \
+производится через SberPay в формате пуш уведомления. 
 
 Ваша команда начос. 🌝
     '''
     await message.answer(text)
-
-
-# @dp.message(lambda message: message.text == "Купить подписку")
-# async def buy(message: types.Message):
-#     if config.PAYMENTS_TOKEN.split(':')[1] == 'TEST':
-#         await bot.send_message(message.chat.id, "Тестовый платеж.")
-#
-#     await bot.send_invoice(message.chat.id,
-#                            title="Подписка на VPN",
-#                            description="Активация подписки VPN на 1 месяц",
-#                            provider_token=config.PAYMENTS_TOKEN,
-#                            currency="rub",
-#                            is_flexible=False,
-#                            prices=[config.PRICE_LABELED],
-#                            start_parameter="one-month-subscription",
-#                            payload="test-invoice-payload")
 
 
 # pre checkout  (must be answered in 10 seconds)
@@ -163,14 +169,13 @@ async def send_random_value(callback: types.CallbackQuery):
     dead_emoji = '🔴'
     builder = InlineKeyboardBuilder()
     for num, tunnel in enumerate(tunnel_list):
-
         text += ''.join(
-            f'{num+1}. {tunnel[0]}  |  Статус -\
+            f'{num + 1}. {tunnel[0]}  |  Статус -\
 {alive_emoji if tunnel[1] == "alive" else dead_emoji}\n'
         )
-
+        # допилить, чтобы по 3 в линию
         builder.add(types.InlineKeyboardButton(
-            text=f"{num+1}",
+            text=f"{num + 1}",
             callback_data="extend_buy_2")
         )
 
@@ -178,19 +183,90 @@ async def send_random_value(callback: types.CallbackQuery):
 
 
 @dp.callback_query(F.data == "new_buy")
-async def process_payment(callback: types.CallbackQuery):
+async def process_payment(callback: types.CallbackQuery, state: FSMContext):
     if config.PAYMENTS_TOKEN.split(':')[1] == 'TEST':
         await bot.send_message(callback.message.chat.id, "Тестовый платеж.")
+    payment = Payment.create({
+        "amount": {
+            "value": str(config.PRICE) + '.00',
+            "currency": "RUB"
+        },
+        "payment_method_data": {
+            "type": "bank_card",
+        },
+        "confirmation": {
+            "type": "redirect",
+            "return_url": "https://t.me/vpnachos_bot"
+        },
+        "capture": "true",
+        "description": "Месяц подписки"
+    }, str(uuid.uuid4()))
+    payment_data = json.loads(payment.json())
+    payment_id = payment_data['id']
+    await state.update_data(payment_id=payment_id)
 
-    await bot.send_invoice(callback.message.chat.id,
-                           title="Подписка на VPN",
-                           description="Активация подписки VPN на 1 месяц",
-                           provider_token=config.PAYMENTS_TOKEN,
-                           currency="rub",
-                           is_flexible=False,
-                           prices=[config.PRICE_LABELED],
-                           start_parameter="one-month-subscription",
-                           payload="test-invoice-payload")
+    payment_url = (payment_data['confirmation'])['confirmation_url']
+    text = f"""Произведите оплату по ссылке:\
+    {payment_url} \
+    
+    Ссылка доступна 10 минут.
+    """
+    builder = InlineKeyboardBuilder()
+    builder.add(types.InlineKeyboardButton(
+        text="Проверка платежа",
+        callback_data="check_payment")
+    )
+    await bot.send_message(
+        chat_id=callback.message.chat.id,
+        text=text,
+        reply_markup=builder.as_markup())
+
+
+@dp.callback_query(F.data == "check_payment")
+async def check_payment(callback: types.CallbackQuery, state: FSMContext):
+    # Получаем payment_id из состояния
+    data = await state.get_data()
+    payment_id = data.get("payment_id")
+
+    if not payment_id:
+        await bot.send_message(callback.message.chat.id, "Не найден идентификатор платежа.")
+        return
+
+    # Пытаемся получить информацию о платеже
+    try:
+        payment_info = Payment.find_one(payment_id)
+
+        if payment_info.status == "succeeded":
+            await bot.send_message(
+                callback.message.chat.id,
+                "Ваш платеж прошел успешно! Спасибо за покупку."
+            )
+
+            # Тут можно отправить конфиг или продлить услугу
+            # Пример:
+            # await send_vpn_config(callback.message.chat.id)
+            await bot.send_message(callback.message.chat.id, 'Пу-пу-пу...')
+
+        elif payment_info.status in ["pending", "waiting_for_capture"]:
+            await bot.send_message(
+                callback.message.chat.id,
+                "Платеж еще обрабатывается, пожалуйста, подождите несколько секунд."
+            )
+            await bot.send_message(
+                chat_id=callback.message.chat.id,
+                text=str(payment_info.status)
+            )
+        else:
+            await bot.send_message(
+                callback.message.chat.id,
+                f"Платеж не был успешным. Статус: {payment_info.status}. Обратитесь в поддержку."
+            )
+    except Exception as e:
+        logging.error(f"Ошибка при проверке платежа: {e}")
+        await bot.send_message(
+            callback.message.chat.id,
+            "Произошла ошибка при проверке платежа. Попробуйте позже."
+        )
 
 
 # echo bot

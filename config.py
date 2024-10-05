@@ -13,3 +13,5 @@ PRICE_LABELED = types.LabeledPrice(
     label="Подписка на 1 месяц", amount=PRICE*100
 )
 URL = os.getenv('URL')
+YOKASSA_API_KEY = os.getenv('YOKASSA_API_KEY')
+MARKET_ID = os.getenv('MARKET_ID')

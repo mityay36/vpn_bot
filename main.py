@@ -1,8 +1,7 @@
 import asyncio
 import json
 import logging
-import uuid
-import aiohttp
+import os
 
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
@@ -14,7 +13,8 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from yookassa import Payment, Configuration
 
 import config
-from logic import get_tunnel_list
+from logic import get_tunnel_list, get_payment, get_data, get_file_from_data
+
 
 # log
 logging.basicConfig(level=logging.INFO)
@@ -38,7 +38,6 @@ async def start_command(message: Message):
         ],
         resize_keyboard=True
     )
-
     # Отправляем приветственное сообщение с клавиатурой
     await message.answer(
         "Добро пожаловать! Выберите команду:", reply_markup=keyboard
@@ -79,23 +78,17 @@ async def contacts(message: Message):
 @dp.message(lambda message: message.text == "О боте")
 async def about(message: Message):
     text = f'''
-👋 Привет! Мы - команда разработчиков из Москвы.
+    👋 Привет! Мы - команда разработчиков из Москвы.\n
 Наша задача - обеспечить свободную сеть в родной стране за \
-доступный прайс для каждого. Серверы находятся в Латвии, что \
-обеспечивает максимальную скорость передачи трафика 🚀
-
-💳 Подписка составляет {config.PRICE} руб/мес. Оплата \
-производится через SberPay в формате пуш уведомления. 
+    доступный прайс для каждого. Серверы находятся в Латвии, что \
+    обеспечивает максимальную скорость передачи трафика 🚀\
+    \n
+💳 Подписка составляет {config.PRICE} руб/мес. Оплата производится \
+    через Юмани в формате всплывающего окна.
 
 Ваша команда начос. 🌝
     '''
     await message.answer(text)
-
-
-# pre checkout  (must be answered in 10 seconds)
-@dp.pre_checkout_query(lambda query: True)
-async def pre_checkout_query(pre_checkout_q: types.PreCheckoutQuery):
-    await bot.answer_pre_checkout_query(pre_checkout_q.id, ok=True)
 
 
 @dp.message(lambda message: message.text == "Купить подписку")
@@ -130,8 +123,8 @@ async def extend_buy_options(callback: types.CallbackQuery, state: FSMContext):
     builder = InlineKeyboardBuilder()
     for num, tunnel in enumerate(tunnel_list):
         text += ''.join(
-            f'{num + 1}. {tunnel[0]}  |  Статус -\
-{alive_emoji if tunnel[1] == "alive" else dead_emoji}\n'
+            f'{num + 1}. {tunnel[0]}  |  Статус -'
+            f'{alive_emoji if tunnel[1] == "alive" else dead_emoji}\n'
         )
         # допилить, чтобы по 3 в линию
         builder.add(types.InlineKeyboardButton(
@@ -142,11 +135,8 @@ async def extend_buy_options(callback: types.CallbackQuery, state: FSMContext):
     await callback.message.answer(text, reply_markup=builder.as_markup())
 
 
-@dp.callback_query(F.data == "extend_buy")
+@dp.callback_query(F.data == "extend_buy_2")
 async def extend_buy_process(callback: types.CallbackQuery, state: FSMContext):
-
-
-
     ...
 
 
@@ -158,27 +148,13 @@ async def process_payment(callback: types.CallbackQuery, state: FSMContext):
 
     await state.update_data(new_buy_state=0)
 
-    payment = Payment.create({
-        "amount": {
-            "value": str(config.PRICE) + '.00',
-            "currency": "RUB"
-        },
-        "payment_method_data": {
-            "type": "bank_card",
-        },
-        "confirmation": {
-            "type": "redirect",
-            "return_url": "https://t.me/vpnachos_bot"
-        },
-        "capture": "true",
-        "description": "Месяц подписки"
-    }, str(uuid.uuid4()))
+    payment = get_payment()
+
     payment_data = json.loads(payment.json())
     payment_id = payment_data['id']
 
     await state.update_data(payment_id=payment_id)
 
-    print(payment_data)
     payment_url = (payment_data['confirmation'])['confirmation_url']
     text = f"""Произведите оплату по ссылке:\
     {payment_url} \
@@ -215,15 +191,23 @@ async def check_payment(callback: types.CallbackQuery, state: FSMContext):
                 callback.message.chat.id,
                 "Ваш платеж прошел успешно! Спасибо за покупку."
             )
+
             perm_state = await state.get_data()
             payment_status = perm_state.get('new_buy_state')
+
             if payment_info.paid:
                 if payment_status == 0:
                     await bot.send_message(callback.message.chat.id, 'Первичная отправка конфига')
                     # Здесь должна быть некоторая логика формирования и выдачи конфига юзеру
+
+                    ans_json = await (get_data(
+                        f"{os.getenv('SET_PEER')}/{callback.from_user.id}+{callback.from_user.username}"))
+                    file = await get_file_from_data(callback.from_user.username, ans_json)
+                    await callback.message.answer_document(FSInputFile(path=f"configs/{file}.conf"))
                     await state.update_data(new_buy_state=1)
                 else:
-                    await bot.send_message(callback.message.chat.id, 'Повторная отправка конфига')
+                    await bot.send_message(callback.message.chat.id, 'Ищите конфиг выше :^)')
+                    # здесь логика повторной отправки последнего купленного конфига
 
         elif payment_info.status in ["pending", "waiting_for_capture"]:
             await bot.send_message(
@@ -239,6 +223,7 @@ async def check_payment(callback: types.CallbackQuery, state: FSMContext):
                 callback.message.chat.id,
                 f"Платеж не был успешным. Статус: {payment_info.status}. Обратитесь в поддержку."
             )
+
     except Exception as e:
         logging.error(f"Ошибка при проверке платежа: {e}")
         await bot.send_message(

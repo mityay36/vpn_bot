@@ -116,7 +116,7 @@ async def extend_buy_options(callback: types.CallbackQuery, state: FSMContext):
 
     # tunnel_list = [(name1, status1), (name2, status2), ...]
 
-    tunnel_list = get_tunnel_list(callback.message.chat.id)
+    tunnel_list = get_tunnel_list(callback.from_user.username)
     text = 'Выберете номер конфига, который хотите продлить: \n'
     alive_emoji = '🟢'
     dead_emoji = '🔴'
@@ -137,6 +137,7 @@ async def extend_buy_options(callback: types.CallbackQuery, state: FSMContext):
 
 @dp.callback_query(F.data == "extend_buy_2")
 async def extend_buy_process(callback: types.CallbackQuery, state: FSMContext):
+    # необходимо допилить логику с продлением конфигурации. Заново конфиг отсылать смысла нет.
     ...
 
 
@@ -147,8 +148,21 @@ async def process_payment(callback: types.CallbackQuery, state: FSMContext):
         await bot.send_message(callback.message.chat.id, "Тестовый платеж.")
 
     await state.update_data(new_buy_state=0)
-
-    payment = get_payment()
+    
+    # получаем данные о состоянии
+    data = await state.get_data()
+    payment_id = data.get("payment_id")
+    if payment_id:
+        payment_info = Payment.find_one(payment_id)
+        status = payment_info.status
+    
+        # проверяем статус платежа
+        if status in {"succeeded", "canceled"}:
+            payment = get_payment()
+        else:
+            payment = payment_info
+    else: 
+        payment = get_payment()
 
     payment_data = json.loads(payment.json())
     payment_id = payment_data['id']
@@ -159,7 +173,7 @@ async def process_payment(callback: types.CallbackQuery, state: FSMContext):
     text = f"""Произведите оплату по ссылке:\
     {payment_url} \
     
-    Ссылка доступна 10 минут.
+    При проблемах с оплатой обращайтесь к администратору.
     """
     builder = InlineKeyboardBuilder()
     builder.add(types.InlineKeyboardButton(

@@ -173,7 +173,7 @@ async def process_payment(callback: types.CallbackQuery, state: FSMContext):
     text = f"""Произведите оплату по ссылке:\
     {payment_url} \
     
-    При проблемах с оплатой обращайтесь к администратору.
+При проблемах с оплатой обращайтесь к администратору.
     """
     builder = InlineKeyboardBuilder()
     builder.add(types.InlineKeyboardButton(

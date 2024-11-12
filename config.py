@@ -15,3 +15,6 @@ PRICE_LABELED = types.LabeledPrice(
 URL = os.getenv('URL')
 YOKASSA_API_KEY = os.getenv('YOKASSA_API_KEY')
 MARKET_ID = os.getenv('MARKET_ID')
+GET_PEER_LIST = os.getenv('GET_PEER_LIST')
+SET_PEER = os.getenv('SET_PEER')
+EXTEND_PEER = os.getenv('EXTEND_PEER')

@@ -1,11 +1,30 @@
-# import json
-# import uuid
+import json
+import asyncio
 
-# import requests
-# from yookassa import Payment, Configuration, Receipt
+import config
+from logic import get_data
 
-# import config
 
+
+async def get_tunnel_list(username: str):
+    tunnels = await get_data(f'{config.GET_PEER_LIST}/{username}')
+
+    if 'Error' in tunnels:
+        return False
+    
+    out = []
+    for tunnel in tunnels:
+        if tunnel['Status'] == 'Paid':
+            status = '🟢'
+        else:
+            status = '🔴'
+        out.append((tunnel['Name'], status))
+
+    return print(out)
+
+
+
+asyncio.run(get_tunnel_list('O4pyatka'))
 # Configuration.account_id = str(config.MARKET_ID)
 # Configuration.secret_key = str(config.YOKASSA_API_KEY)
 # Configuration.configure(config.MARKET_ID, config.YOKASSA_API_KEY)

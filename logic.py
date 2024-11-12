@@ -28,19 +28,6 @@ def get_payment():
     }, str(uuid.uuid4()))
 
 
-def get_tunnel_list(chat_id: int):
-    tunnel_list = [
-        ('urmomgay_wg0', 'alive'),
-        ('vasya1_wg0', 'dead'),
-        ('remotecontrol_of_america_wg0', 'dead'),
-        ('num1', 'dead'),
-        ('num2', 'dead'),
-        ('nu3', 'dead')
-    ]
-    # вообще тут должно быть async & await через io request
-    return tunnel_list
-
-
 async def get_data(url):
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as response:
@@ -86,3 +73,20 @@ PersistentKeepalive = {cfg_json['Peer']['PersistentKeepalive']}
         await file.write(f"{cfg}")
 
     return filename
+
+
+async def get_tunnel_list(username):
+    tunnels = await get_data(f'{config.GET_PEER_LIST}/{username}')
+
+    if 'Error' in tunnels:
+        return False
+    
+    out = []
+    for tunnel in tunnels:
+        if tunnel['Status'] == 'Paid':
+            status = '🟢'
+        else:
+            status = '🔴'
+        out.append((tunnel['Name'], status))
+
+    return out

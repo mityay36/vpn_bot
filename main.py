@@ -96,7 +96,7 @@ async def pay_options(message: types.Message):
     builder = InlineKeyboardBuilder()
     builder.add(types.InlineKeyboardButton(
         text="Продлить",
-        callback_data="extend_buy")
+        callback_data="choose_tunnel")
     )
     builder.add(types.InlineKeyboardButton(
         text="Купить новый",
@@ -108,47 +108,80 @@ async def pay_options(message: types.Message):
     )
 
 
-@dp.callback_query(F.data == "extend_buy")
+@dp.callback_query(F.data == "choose_tunnel")
 async def extend_buy_options(callback: types.CallbackQuery, state: FSMContext):
 
-    # тут должен быть запрос к API для получения кол-ва туннелей пользователя
-    # представим, что запрос прошел и мы получили tunnel_list
-
-    # tunnel_list = [(name1, status1), (name2, status2), ...]
-
-    tunnel_list = get_tunnel_list(callback.from_user.username)
+    tunnel_list = await get_tunnel_list(callback.from_user.username)
+    
+    if not tunnel_list:
+        await callback.message.answer("Для проверки статуса платежа необходимо купить туннель.")
+        return
+    
     text = 'Выберете номер конфига, который хотите продлить: \n'
-    alive_emoji = '🟢'
-    dead_emoji = '🔴'
+    
     builder = InlineKeyboardBuilder()
     for num, tunnel in enumerate(tunnel_list):
         text += ''.join(
             f'{num + 1}. {tunnel[0]}  |  Статус -'
-            f'{alive_emoji if tunnel[1] == "alive" else dead_emoji}\n'
+            f'{tunnel[1]}\n'
         )
         # допилить, чтобы по 3 в линию
         builder.add(types.InlineKeyboardButton(
             text=f"{num + 1}",
-            callback_data="extend_buy_2")
+            callback_data=f"extend_buy:{tunnel[0]}")
         )
+
+        builder.adjust(3)
 
     await callback.message.answer(text, reply_markup=builder.as_markup())
 
 
-@dp.callback_query(F.data == "extend_buy_2")
+@dp.callback_query(F.data.startswith("extend_buy:"))
 async def extend_buy_process(callback: types.CallbackQuery, state: FSMContext):
     # необходимо допилить логику с продлением конфигурации. Заново конфиг отсылать смысла нет.
-    ...
+    
+    config_name = callback.data.split(":")[1]
+
+    await state.update_data(config_name=config_name)
+    await state.update_data(buy_type='2')
+
+    
+    builder = InlineKeyboardBuilder()
+    builder.add(types.InlineKeyboardButton(
+        text="Продлить подписку",
+        callback_data="buy")
+    )
+    await callback.message.answer(f"Вы выбрали конфиг '{config_name}' для продления.", reply_markup=builder.as_markup())
+
+
+    # Отправляем информацию об оплате
+    # builder = InlineKeyboardBuilder()
+    # builder.add(types.InlineKeyboardButton(
+    #     text="Проверка платежа",
+    #     callback_data="check_payment")
+    # )
+    # await callback.message.answer("Нажмите 'Проверка платежа' после завершения оплаты.", reply_markup=builder.as_markup())
 
 
 @dp.callback_query(F.data == "new_buy")
+async def process_new_buy(callback: types.CallbackQuery, state: FSMContext):
+    await state.update_data(buy_type='1')
+    builder = InlineKeyboardBuilder()
+    builder.add(types.InlineKeyboardButton(
+        text="Приобрести подписку",
+        callback_data="buy")
+    )
+    await callback.message.answer(f"Вы выбрали покупку нового конфига.", reply_markup=builder.as_markup())
+
+
+
+@dp.callback_query(F.data == "buy")
 async def process_payment(callback: types.CallbackQuery, state: FSMContext):
 
     if config.PAYMENTS_TOKEN.split(':')[1] == 'TEST':
         await bot.send_message(callback.message.chat.id, "Тестовый платеж.")
 
     await state.update_data(new_buy_state=0)
-    
     # получаем данные о состоянии
     data = await state.get_data()
     payment_id = data.get("payment_id")
@@ -192,6 +225,10 @@ async def check_payment(callback: types.CallbackQuery, state: FSMContext):
     # Получаем payment_id из состояния
     data = await state.get_data()
     payment_id = data.get("payment_id")
+    config_name = data.get("config_name")
+    buy_type= data.get("buy_type")
+
+
 
     if not payment_id:
         await bot.send_message(callback.message.chat.id, "Не найден идентификатор платежа.")
@@ -206,23 +243,43 @@ async def check_payment(callback: types.CallbackQuery, state: FSMContext):
                 callback.message.chat.id,
                 "Ваш платеж прошел успешно! Спасибо за покупку."
             )
+            if buy_type == '1':
+                # perm_state = await state.get_data()
+                payment_status = data.get('new_buy_state')
 
-            perm_state = await state.get_data()
-            payment_status = perm_state.get('new_buy_state')
+                if payment_info.paid:
+                    if payment_status == 0:
+                        await bot.send_message(callback.message.chat.id, 'Первичная отправка конфига')
+                        
+                        # Логика формирования и выдачи конфига юзеру
+                        ans_json = await (get_data(
+                            f"{os.getenv('SET_PEER')}/{callback.from_user.username}"))
+                        file = await get_file_from_data(callback.from_user.username, ans_json)
+                        await callback.message.answer_document(FSInputFile(path=f"configs/{file}.conf"))
+                        await state.update_data(new_buy_state=1)
+                        await state.update_data(buy_type="0")
 
-            if payment_info.paid:
-                if payment_status == 0:
-                    await bot.send_message(callback.message.chat.id, 'Первичная отправка конфига')
-                    # Здесь должна быть некоторая логика формирования и выдачи конфига юзеру
+                    else:
+                        await bot.send_message(callback.message.chat.id, 'Ищите конфиг выше :^)')
+                        # здесь логика повторной отправки последнего купленного конфига
+            elif buy_type == '2':
+                payment_status = data.get('new_buy_state')
 
-                    ans_json = await (get_data(
-                        f"{os.getenv('SET_PEER')}/{callback.from_user.username}"))
-                    file = await get_file_from_data(callback.from_user.username, ans_json)
-                    await callback.message.answer_document(FSInputFile(path=f"configs/{file}.conf"))
-                    await state.update_data(new_buy_state=1)
-                else:
-                    await bot.send_message(callback.message.chat.id, 'Ищите конфиг выше :^)')
-                    # здесь логика повторной отправки последнего купленного конфига
+                if payment_info.paid:
+                    if payment_status == 0:
+
+                        # логика продления выбранного конфига
+                        ans_json = await (get_data(
+                            f"{config.EXTEND_PEER}/{config_name.split('-')[0]}"))
+                        
+                        await state.update_data(buy_type="0")
+                        await state.update_data(new_buy_state=1)
+
+                        bot.send_message(callback.message.chat.id, str(ans_json))
+
+                    else:
+                        await bot.send_message(callback.message.chat.id, 'Ищите конфиг выше :^)')
+
 
         elif payment_info.status in ["pending", "waiting_for_capture"]:
             await bot.send_message(

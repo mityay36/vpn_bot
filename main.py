@@ -244,8 +244,8 @@ async def check_payment(callback: types.CallbackQuery, state: FSMContext):
                 "Ваш платеж прошел успешно! Спасибо за покупку."
             )
             if buy_type == '1':
-                # perm_state = await state.get_data()
-                payment_status = data.get('new_buy_state')
+                perm_state = await state.get_data()
+                payment_status = perm_state.get('new_buy_state')
 
                 if payment_info.paid:
                     if payment_status == 0:
@@ -263,6 +263,7 @@ async def check_payment(callback: types.CallbackQuery, state: FSMContext):
                         await bot.send_message(callback.message.chat.id, 'Ищите конфиг выше :^)')
                         # здесь логика повторной отправки последнего купленного конфига
             elif buy_type == '2':
+                perm_state = await state.get_data()
                 payment_status = data.get('new_buy_state')
 
                 if payment_info.paid:

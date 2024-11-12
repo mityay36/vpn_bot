@@ -24,7 +24,7 @@ async def get_tunnel_list(username: str):
 
 
 
-asyncio.run(get_tunnel_list('O4pyatka'))
+
 # Configuration.account_id = str(config.MARKET_ID)
 # Configuration.secret_key = str(config.YOKASSA_API_KEY)
 # Configuration.configure(config.MARKET_ID, config.YOKASSA_API_KEY)

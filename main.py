@@ -273,13 +273,17 @@ async def check_payment(callback: types.CallbackQuery, state: FSMContext):
                         ans_json = await (get_data(
                             f"{config.EXTEND_PEER}/{config_name.split('-')[0]}"))
                         
+                        if ans_json['Message'].startswith('1 Month added successfully'):
+                            bot.send_message(callback.message.chat.id, 'Туннель успешно продлен!')
+                        else:
+                            bot.send_message(callback.message.chat.id, 'Если Вы видите данное ообщение, сообщите администратору :/')
+                        
                         await state.update_data(buy_type="0")
                         await state.update_data(new_buy_state=1)
 
-                        bot.send_message(callback.message.chat.id, str(ans_json))
 
                     else:
-                        await bot.send_message(callback.message.chat.id, 'Ищите конфиг выше :^)')
+                        await bot.send_message(callback.message.chat.id, 'Ищите инфу выше :^)')
 
 
         elif payment_info.status in ["pending", "waiting_for_capture"]:

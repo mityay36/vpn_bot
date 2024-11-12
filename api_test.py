@@ -52,3 +52,5 @@ async def get_tunnel_list(username: str):
 
 # payment_info = Payment.find_one('')
 # print(json.loads(payment_info.json()))
+ans_json = asyncio.run((get_data(f"{config.EXTEND_PEER}/15")))
+print(ans_json["Message"])

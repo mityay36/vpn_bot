@@ -216,7 +216,7 @@ async def check_payment(callback: types.CallbackQuery, state: FSMContext):
                     # Здесь должна быть некоторая логика формирования и выдачи конфига юзеру
 
                     ans_json = await (get_data(
-                        f"{os.getenv('SET_PEER')}/{callback.from_user.id}+{callback.from_user.username}"))
+                        f"{os.getenv('SET_PEER')}/{callback.from_user.username}"))
                     file = await get_file_from_data(callback.from_user.username, ans_json)
                     await callback.message.answer_document(FSInputFile(path=f"configs/{file}.conf"))
                     await state.update_data(new_buy_state=1)

@@ -78,9 +78,10 @@ AllowedIPs = {cfg_json['Peer']['AllowedIPs']}
 Endpoint = {cfg_json['Peer']['Endpoint']}
 PersistentKeepalive = {cfg_json['Peer']['PersistentKeepalive']}
 '''
-    current_date = datetime.now()
-    date_str = current_date.strftime("%Y-%m-%d-%H-%M-%S")
-    filename = f'{user}-{date_str}'
+    # current_date = datetime.now()
+    # date_str = current_date.strftime("%Y-%m-%d-%H-%M-%S")
+    # filename = f'{user}-{date_str}'
+    filename = cfg_json['FileName']
     async with aiofiles.open(f'configs/{filename}.conf', mode='w') as file:
         await file.write(f"{cfg}")
 

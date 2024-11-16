@@ -190,9 +190,6 @@ async def pay_options(message: types.Message):
         reply_markup=builder.as_markup()
     )
 
-    await asyncio.sleep(config.SLEEP_TIME)
-    await msg.delete()
-
 
 @dp.callback_query(F.data == "choose_tunnel")
 async def extend_buy_options(callback: types.CallbackQuery, state: FSMContext):

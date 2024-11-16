@@ -7,7 +7,7 @@ from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import (
-    Message, ReplyKeyboardMarkup, KeyboardButton, FSInputFile
+    Message, ReplyKeyboardMarkup, KeyboardButton, FSInputFile, InputMediaPhoto
 )
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from yookassa import Payment, Configuration
@@ -46,24 +46,66 @@ async def start_command(message: Message):
 
 @dp.message(lambda message: message.text == "Инструкция по установке")
 async def installation_guide(message: Message):
+    builder = InlineKeyboardBuilder()
+    builder.add(types.InlineKeyboardButton(
+        text="Для ПК",
+        callback_data="instructions_pc")
+    )
+    builder.add(types.InlineKeyboardButton(
+        text="Для мобильного устройства",
+        callback_data="instructions_mobile")
+    )
+    # Отправляем приветственное сообщение с клавиатурой
+    await message.answer(
+        "Выберите тип устройства:", reply_markup=builder.as_markup()
+    )
+
+@dp.callback_query(F.data == "instructions_pc")
+async def installation_guide(callback: types.CallbackQuery):
     text = f'''
 1. Установите WireGuard
 [Официальная ссылка]({config.URL})
 2. Импортируйте файл конфигурации
 3. Запустите WireGuard
 '''
-    await message.answer(text, parse_mode='Markdown')
-    await message.answer_photo(
-        FSInputFile(path='photos/0.png'),
+    await callback.message.answer(text, parse_mode='Markdown')
+    await callback.message.answer_photo(
+        FSInputFile(path='photos/for_pc/0.png'),
         caption="Шаг 1: Установка WireGuard"
     )
-    await message.answer_photo(
-        FSInputFile(path='photos/1.jpg'),
+    await callback.message.answer_photo(
+        FSInputFile(path='photos/for_pc/1.jpg'),
         caption="Шаг 2: Настройка конфигурации"
     )
-    await message.answer_photo(
-        FSInputFile(path='photos/2.png'),
+    await callback.message.answer_photo(
+        FSInputFile(path='photos/for_pc/2.png'),
         caption="Шаг 3: Запуск WireGuard"
+    )
+
+@dp.callback_query(F.data == "instructions_mobile")
+async def installation_guide(callback: types.CallbackQuery):
+    text = f'''
+1. Установите WireGuard в *AppStore* или *Play Market*
+2. Импортируйте файл конфигурации
+3. Запустите WireGuard
+'''
+    await callback.message.answer(text, parse_mode='Markdown')
+    media = [
+        InputMediaPhoto(media=FSInputFile(path='photos/for_mobile/1.jpg'),caption="Шаг 1: Откройте файл с туннелем"),
+        InputMediaPhoto(media=FSInputFile(path='photos/for_mobile/2.jpg')),
+    ]
+    await callback.message.answer_media_group(media)
+
+    media2 = [
+        InputMediaPhoto(media=FSInputFile(path='photos/for_mobile/3.jpg'),caption="Шаг 2: Импортируйте конфиг"),
+        InputMediaPhoto(media=FSInputFile(path='photos/for_mobile/4.jpg')),
+    ]
+
+    await callback.message.answer_media_group(media2)
+
+    await callback.message.answer_photo(
+        FSInputFile(path='photos/for_mobile/5.jpg'),
+        caption="Шаг 3: Запустите VPN"
     )
 
 
@@ -80,7 +122,7 @@ async def about(message: Message):
     text = f'''
     👋 Привет! Мы - команда разработчиков из Москвы.\n
 Наша задача - обеспечить свободную сеть в родной стране за \
-    доступный прайс для каждого. Серверы находятся в Латвии, что \
+    доступный прайс для каждого. Серверы находятся в Латвии и Молдове, что \
     обеспечивает максимальную скорость передачи трафика 🚀\
     \n
 💳 Подписка составляет {config.PRICE} руб/мес. Оплата производится \

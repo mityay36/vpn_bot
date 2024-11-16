@@ -46,6 +46,9 @@ async def start_command(message: Message):
 
 @dp.message(lambda message: message.text == "Инструкция по установке")
 async def installation_guide(message: Message):
+
+    await message.delete()
+
     builder = InlineKeyboardBuilder()
     builder.add(types.InlineKeyboardButton(
         text="Для ПК",
@@ -62,79 +65,116 @@ async def installation_guide(message: Message):
 
 @dp.callback_query(F.data == "instructions_pc")
 async def installation_guide(callback: types.CallbackQuery):
+
+    await callback.message.delete()
+
     text = f'''
 1. Установите WireGuard
 [Официальная ссылка]({config.URL})
 2. Импортируйте файл конфигурации
 3. Запустите WireGuard
 '''
-    await callback.message.answer(text, parse_mode='Markdown')
-    await callback.message.answer_photo(
+    msg1 = await callback.message.answer(text, parse_mode='Markdown', disable_web_page_preview=True)
+    msg2 =await callback.message.answer_photo(
         FSInputFile(path='photos/for_pc/0.png'),
         caption="Шаг 1: Установка WireGuard"
     )
-    await callback.message.answer_photo(
+    msg3 =await callback.message.answer_photo(
         FSInputFile(path='photos/for_pc/1.jpg'),
         caption="Шаг 2: Настройка конфигурации"
     )
-    await callback.message.answer_photo(
+    msg4 =await callback.message.answer_photo(
         FSInputFile(path='photos/for_pc/2.png'),
         caption="Шаг 3: Запуск WireGuard"
     )
+    await asyncio.sleep(config.SLEEP_TIME)
+
+    await msg1.delete()
+    await msg2.delete()
+    await msg3.delete()
+    await msg4.delete()
+
 
 @dp.callback_query(F.data == "instructions_mobile")
 async def installation_guide(callback: types.CallbackQuery):
+    await callback.message.delete()
+
     text = f'''
-1. Установите WireGuard в *AppStore* или *Play Market*
+1. Установите WireGuard в [AppStore]({config.URL2}) или [Play Market]({config.URL3})
 2. Импортируйте файл конфигурации
 3. Запустите WireGuard
 '''
-    await callback.message.answer(text, parse_mode='Markdown')
+    msg1 = await callback.message.answer(text, parse_mode='Markdown', disable_web_page_preview=True)
     media = [
         InputMediaPhoto(media=FSInputFile(path='photos/for_mobile/1.jpg'),caption="Шаг 1: Откройте файл с туннелем"),
         InputMediaPhoto(media=FSInputFile(path='photos/for_mobile/2.jpg')),
     ]
-    await callback.message.answer_media_group(media)
+    msg2 = await callback.message.answer_media_group(media)
 
     media2 = [
         InputMediaPhoto(media=FSInputFile(path='photos/for_mobile/3.jpg'),caption="Шаг 2: Импортируйте конфиг"),
         InputMediaPhoto(media=FSInputFile(path='photos/for_mobile/4.jpg')),
     ]
 
-    await callback.message.answer_media_group(media2)
+    msg3 = await callback.message.answer_media_group(media2)
 
-    await callback.message.answer_photo(
+    msg4 = await callback.message.answer_photo(
         FSInputFile(path='photos/for_mobile/5.jpg'),
         caption="Шаг 3: Запустите VPN"
     )
 
+    await asyncio.sleep(config.SLEEP_TIME)
+
+    await msg1.delete()
+    for msg in msg2:
+        await msg.delete()
+    for msg in msg3:
+        await msg.delete()
+    await msg4.delete()
+
 
 @dp.message(lambda message: message.text == "Контакты")
 async def contacts(message: Message):
+
+    await message.delete()
+
     text = f'''
     С вопросами о работе бота обращаться к @{config.CONTACT}
     '''
-    await message.answer(text)
+    
+    msg = await message.answer(text)
+
+    await asyncio.sleep(config.SLEEP_TIME)
+    await msg.delete()
 
 
 @dp.message(lambda message: message.text == "О боте")
 async def about(message: Message):
+
+    await message.delete()
+
     text = f'''
     👋 Привет! Мы - команда разработчиков из Москвы.\n
 Наша задача - обеспечить свободную сеть в родной стране за \
-    доступный прайс для каждого. Серверы находятся в Латвии и Молдове, что \
-    обеспечивает максимальную скорость передачи трафика 🚀\
+доступный прайс для каждого. Серверы находятся в Латвии и Молдове, что \
+обеспечивает максимальную скорость передачи трафика 🚀\
     \n
 💳 Подписка составляет {config.PRICE} руб/мес. Оплата производится \
-    через Юмани в формате всплывающего окна.
+через Юмани банковской картой.
 
 Ваша команда начос. 🌝
     '''
-    await message.answer(text)
+
+    msg = await message.answer(text)
+    await asyncio.sleep(config.SLEEP_TIME)
+    await msg.delete()
 
 
 @dp.message(lambda message: message.text == "Купить подписку")
 async def pay_options(message: types.Message):
+
+    await message.delete()
+
     builder = InlineKeyboardBuilder()
     builder.add(types.InlineKeyboardButton(
         text="Продлить",
@@ -144,14 +184,19 @@ async def pay_options(message: types.Message):
         text="Купить новый",
         callback_data="new_buy")
     )
-    await message.answer(
+    msg = await message.answer(
         "Вы хотите продлить подписку или приобрести новый конфиг?",
         reply_markup=builder.as_markup()
     )
 
+    await asyncio.sleep(config.SLEEP_TIME)
+    await msg.delete()
+
 
 @dp.callback_query(F.data == "choose_tunnel")
 async def extend_buy_options(callback: types.CallbackQuery, state: FSMContext):
+
+    await callback.message.delete()
 
     tunnel_list = await get_tunnel_list(callback.from_user.username)
     
@@ -182,6 +227,8 @@ async def extend_buy_options(callback: types.CallbackQuery, state: FSMContext):
 async def extend_buy_process(callback: types.CallbackQuery, state: FSMContext):
     # необходимо допилить логику с продлением конфигурации. Заново конфиг отсылать смысла нет.
     
+    await callback.message.delete()
+
     config_name = callback.data.split(":")[1]
 
     await state.update_data(config_name=config_name)
@@ -207,6 +254,9 @@ async def extend_buy_process(callback: types.CallbackQuery, state: FSMContext):
 
 @dp.callback_query(F.data == "new_buy")
 async def process_new_buy(callback: types.CallbackQuery, state: FSMContext):
+
+    await callback.message.delete()
+
     await state.update_data(buy_type='1')
     builder = InlineKeyboardBuilder()
     builder.add(types.InlineKeyboardButton(
@@ -219,6 +269,8 @@ async def process_new_buy(callback: types.CallbackQuery, state: FSMContext):
 
 @dp.callback_query(F.data == "buy")
 async def process_payment(callback: types.CallbackQuery, state: FSMContext):
+
+    await callback.message.delete()
 
     if config.PAYMENTS_TOKEN.split(':')[1] == 'TEST':
         await bot.send_message(callback.message.chat.id, "Тестовый платеж.")
@@ -281,7 +333,7 @@ async def check_payment(callback: types.CallbackQuery, state: FSMContext):
         payment_info = Payment.find_one(payment_id)
 
         if payment_info.status == "succeeded":
-            await bot.send_message(
+            msg1 = await bot.send_message(
                 callback.message.chat.id,
                 "Ваш платеж прошел успешно! Спасибо за покупку."
             )
@@ -291,7 +343,10 @@ async def check_payment(callback: types.CallbackQuery, state: FSMContext):
 
                 if payment_info.paid:
                     if payment_status == 0:
-                        await bot.send_message(callback.message.chat.id, 'Первичная отправка конфига')
+
+                        await callback.message.delete()
+
+                        msg2 = await bot.send_message(callback.message.chat.id, 'Первичная отправка конфига')
                         
                         # Логика формирования и выдачи конфига юзеру
                         ans_json = await (get_data(
@@ -300,6 +355,9 @@ async def check_payment(callback: types.CallbackQuery, state: FSMContext):
                         await callback.message.answer_document(FSInputFile(path=f"configs/{file}.conf"))
                         await state.update_data(new_buy_state=1)
                         await state.update_data(buy_type="0")
+                        await asyncio.sleep(config.SLEEP_TIME)
+                        await msg1.delete()
+                        await msg2.delete()
 
                     else:
                         await bot.send_message(callback.message.chat.id, 'Ищите конфиг выше :^)')
@@ -316,7 +374,15 @@ async def check_payment(callback: types.CallbackQuery, state: FSMContext):
                             f"{config.EXTEND_PEER}/{config_name.split('-')[0]}"))
                         
                         if ans_json['Message'].startswith('1 Month added successfully'):
-                            await bot.send_message(callback.message.chat.id, 'Туннель успешно продлен!')
+                            
+                            await callback.message.delete()
+
+                            msg2 = await bot.send_message(callback.message.chat.id, 'Туннель успешно продлен!')
+                            
+                            await asyncio.sleep(config.SLEEP_TIME)
+                            await msg1.delete()
+                            await msg2.delete()
+
                         else:
                             await bot.send_message(callback.message.chat.id, 'Если Вы видите данное ообщение, сообщите администратору :/')
                         
@@ -354,8 +420,10 @@ async def check_payment(callback: types.CallbackQuery, state: FSMContext):
 # echo bot
 @dp.message(F.text)
 async def echo(message: types.Message):
-    await message.answer(message.text)
-
+    sent_message = await message.answer(message.text)
+    await message.delete()
+    await asyncio.sleep(10)
+    await sent_message.delete()
 
 async def main():
     await dp.start_polling(bot)

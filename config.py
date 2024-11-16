@@ -13,8 +13,11 @@ PRICE_LABELED = types.LabeledPrice(
     label="Подписка на 1 месяц", amount=PRICE*100
 )
 URL = os.getenv('URL')
+URL2 = os.getenv('URL2')
+URL3 = os.getenv('URL3')
 YOKASSA_API_KEY = os.getenv('YOKASSA_API_KEY')
 MARKET_ID = os.getenv('MARKET_ID')
 GET_PEER_LIST = os.getenv('GET_PEER_LIST')
 SET_PEER = os.getenv('SET_PEER')
 EXTEND_PEER = os.getenv('EXTEND_PEER')
+SLEEP_TIME = int(os.getenv('SLEEP_TIME'))

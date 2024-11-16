@@ -139,10 +139,11 @@ async def contacts(message: Message):
     await message.delete()
 
     text = f'''
-    С вопросами о работе бота обращаться к @{config.CONTACT}
-    '''
+    С вопросами о работе бота обращаться к @{config.CONTACT}. \n
+Новостной канал: [Nachos VPN News]({config.CONTACT_CHANELL})
+'''
     
-    msg = await message.answer(text)
+    msg = await message.answer(text, parse_mode='Markdown', disable_web_page_preview=True)
 
     await asyncio.sleep(config.SLEEP_TIME)
     await msg.delete()

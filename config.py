@@ -8,6 +8,7 @@ load_dotenv()
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 PAYMENTS_TOKEN = os.getenv('PAYMASTER_TOKEN')
 CONTACT = os.getenv('CONTACT')
+CONTACT_CHANELL = os.getenv('CONTACT_CHANELL')
 PRICE = int(os.getenv('PRICE'))
 PRICE_LABELED = types.LabeledPrice(
     label="Подписка на 1 месяц", amount=PRICE*100

@@ -32,9 +32,27 @@ Configuration.secret_key = config.YOKASSA_API_KEY
 async def set_commands(bot: Bot):
     commands = [
         BotCommand(command="/start", description="Начать работу с ботом"),
+        BotCommand(command="/update", description="Обновить бота"),
     ]
     await bot.set_my_commands(commands)
 
+
+@dp.message(Command("update"))
+async def start_command(message: Message):
+    if True:
+        keyboard = ReplyKeyboardMarkup(
+            keyboard=[
+                [KeyboardButton(text="Купить подписку")],
+                [KeyboardButton(text="Тех. Поддержка"), KeyboardButton(text="О боте")],
+                [KeyboardButton(text="Инструкция по установке")]
+            ],
+            resize_keyboard=True
+        )
+        await message.answer(
+            "Бот успешно обновлен!", reply_markup=keyboard
+        )
+    else:
+        await message.answer("Обновлений нет")
 
 @dp.message(Command("start"))
 async def start_command(message: Message):
@@ -47,7 +65,6 @@ async def start_command(message: Message):
         ],
         resize_keyboard=True
     )
-    # Отправляем приветственное сообщение с клавиатурой
     await message.answer(
         "Добро пожаловать! Выберите команду:", reply_markup=keyboard
     )
@@ -477,7 +494,8 @@ async def echo(message: types.Message):
     await sent_message.delete()
 
 async def on_startup(dp: Dispatcher):
-    await set_commands(dp.bot)
+    await dp.startup.register(set_commands)
+
 
 async def main():
     await dp.start_polling(bot)

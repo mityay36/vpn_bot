@@ -476,8 +476,10 @@ async def echo(message: types.Message):
     await asyncio.sleep(10)
     await sent_message.delete()
 
-async def main():
+async def on_startup(dp: Dispatcher):
     await set_commands(dp.bot)
+
+async def main():
     await dp.start_polling(bot)
 
 

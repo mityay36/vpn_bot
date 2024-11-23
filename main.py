@@ -35,7 +35,7 @@ async def set_commands():
         BotCommand(command="/start", description="Начать работу с ботом"),
         BotCommand(command="/update", description="Обновить бота"),
     ]
-    await bot.set_my_commands(commands, BotCommandScopeDefault()))
+    await bot.set_my_commands(commands, BotCommandScopeDefault())
 
 
 @dp.message(Command("update"))

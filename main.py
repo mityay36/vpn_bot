@@ -9,7 +9,8 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import (
     Message, ReplyKeyboardMarkup,
     KeyboardButton, FSInputFile,
-    InputMediaPhoto, BotCommand,
+    InputMediaPhoto, BotCommand, 
+    BotCommandScopeDefault,
 )
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from yookassa import Payment, Configuration
@@ -34,7 +35,7 @@ async def set_commands():
         BotCommand(command="/start", description="Начать работу с ботом"),
         BotCommand(command="/update", description="Обновить бота"),
     ]
-    await bot.set_my_commands(commands)
+    await bot.set_my_commands(commands, BotCommandScopeDefault()))
 
 
 @dp.message(Command("update"))

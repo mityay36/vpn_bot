@@ -496,7 +496,9 @@ async def echo(message: types.Message):
 
 
 async def main():
-    await dp.start_polling(bot, on_startup=set_commands)
+    await dp.start_polling(bot)
+    await set_commands()
+
 
 
 if __name__ == "__main__":

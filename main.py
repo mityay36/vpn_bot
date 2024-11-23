@@ -29,7 +29,7 @@ Configuration.account_id = config.MARKET_ID
 Configuration.secret_key = config.YOKASSA_API_KEY
 
 
-async def set_commands(bot: Bot):
+async def set_commands():
     commands = [
         BotCommand(command="/start", description="Начать работу с ботом"),
         BotCommand(command="/update", description="Обновить бота"),
@@ -493,12 +493,9 @@ async def echo(message: types.Message):
     await asyncio.sleep(10)
     await sent_message.delete()
 
-async def on_startup(dp: Dispatcher):
-    await dp.startup.register(set_commands)
-
 
 async def main():
-    await dp.start_polling(bot)
+    await dp.start_polling(bot, on_startup=set_commands)
 
 
 if __name__ == "__main__":

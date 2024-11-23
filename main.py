@@ -7,7 +7,9 @@ from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import (
-    Message, ReplyKeyboardMarkup, KeyboardButton, FSInputFile, InputMediaPhoto
+    Message, ReplyKeyboardMarkup,
+    KeyboardButton, FSInputFile,
+    InputMediaPhoto, BotCommand,
 )
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from yookassa import Payment, Configuration
@@ -27,13 +29,20 @@ Configuration.account_id = config.MARKET_ID
 Configuration.secret_key = config.YOKASSA_API_KEY
 
 
+async def set_commands(bot: Bot):
+    commands = [
+        BotCommand(command="/start", description="Начать работу с ботом"),
+    ]
+    await bot.set_my_commands(commands)
+
+
 @dp.message(Command("start"))
 async def start_command(message: Message):
     # Создаем кнопки
     keyboard = ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="Купить подписку")],
-            [KeyboardButton(text="Контакты"), KeyboardButton(text="О боте")],
+            [KeyboardButton(text="Тех. Поддержка"), KeyboardButton(text="О боте")],
             [KeyboardButton(text="Инструкция по установке")]
         ],
         resize_keyboard=True
@@ -133,17 +142,61 @@ async def installation_guide(callback: types.CallbackQuery):
     await msg4.delete()
 
 
-@dp.message(lambda message: message.text == "Контакты")
+@dp.message(lambda message: message.text == "Тех. Поддержка")
 async def contacts(message: Message):
-
     await message.delete()
+
+    builder = InlineKeyboardBuilder()
+    builder.add(types.InlineKeyboardButton(
+        text="Контакты",
+        callback_data="contacts")
+    )
+    builder.add(types.InlineKeyboardButton(
+        text="FAQ",
+        callback_data="questions")
+    )
+    await message.answer(
+        "Выберите опцию:", reply_markup=builder.as_markup()
+    )
+
+
+
+@dp.callback_query(F.data == "questions")
+async def contacts(callback: types.CallbackQuery):
+    await callback.message.delete()
+
+    text = f'''
+    *Почему одна конфигурация не работает на двух устройствах одновременно?*\n
+Это происходит, потому что так спроектирован VPN. Удаленный сервер должен знать \
+от какого адресата ему ждать трафик. Каждое устройство, это отдельный адресат, следовательно, \
+когда одна конфигурация используется на двух и более устройствах одновременно адресат меняется \
+каждую секунду, и сервер не может целостно передать интернет из двух независимых каналов информации. \
+Для каждого отдельного устройства мы рекомендуем использовать отдельные конфигурации во избежание конфликтов.\n
+*Почему при переключение мобильной сети и WIFI интернет работает не сразу?*\n
+Серверу нужно какое-то время (21 секунда), чтобы уловить новый изменившийся адресат \
+и снова начать поддерживать стабильное соединение уже с нового адреса.\n
+*У меня Android, не могу добавить туннель, что делать?*\n
+Если у Вас возникает ошибка имени при добавлении конфигурации WireGuard, смените \
+имя файла на более короткое (до 15 символов). Если проблема остается, напишите нам в техническую поддержку.
+'''
+    
+    msg = await callback.message.answer(text, parse_mode='Markdown', disable_web_page_preview=True)
+
+    await asyncio.sleep(config.SLEEP_TIME)
+    await msg.delete()
+
+
+@dp.callback_query(F.data == "contacts")
+async def contacts(callback: types.CallbackQuery):
+
+    await callback.message.delete()
 
     text = f'''
     С вопросами о работе бота обращаться к @{config.CONTACT}. \n
 Новостной канал: [Nachos VPN News]({config.CONTACT_CHANELL})
 '''
     
-    msg = await message.answer(text, parse_mode='Markdown', disable_web_page_preview=True)
+    msg = await callback.message.answer(text, parse_mode='Markdown', disable_web_page_preview=True)
 
     await asyncio.sleep(config.SLEEP_TIME)
     await msg.delete()
@@ -424,6 +477,7 @@ async def echo(message: types.Message):
     await sent_message.delete()
 
 async def main():
+    await set_commands(dp.bot)
     await dp.start_polling(bot)
 
 

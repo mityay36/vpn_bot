@@ -40,6 +40,9 @@ async def set_commands():
 
 @dp.message(Command("update"))
 async def start_command(message: Message):
+
+    await message.delete()
+    
     if True:
         keyboard = ReplyKeyboardMarkup(
             keyboard=[
@@ -49,15 +52,19 @@ async def start_command(message: Message):
             ],
             resize_keyboard=True
         )
-        await message.answer(
+        msg = await message.answer(
             "Бот успешно обновлен!", reply_markup=keyboard
         )
+        await asyncio.sleep(config.SLEEP_TIME)
+
+        await msg.delete()
+
     else:
         await message.answer("Обновлений нет")
 
 @dp.message(Command("start"))
 async def start_command(message: Message):
-    # Создаем кнопки
+
     keyboard = ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="Купить подписку")],

@@ -217,7 +217,7 @@ async def contacts(callback: types.CallbackQuery):
     await callback.message.delete()
 
     text = f'''
-    С вопросами о работе бота обращаться к [El Nachos]({config.CONTACT}). \n
+    С вопросами о работе бота обращаться к [@el_nachoss]({config.CONTACT}). \n
 Новостной канал: [Nachos VPN News]({config.CONTACT_CHANELL})
 '''
     

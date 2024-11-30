@@ -2,9 +2,8 @@ import uuid
 
 import aiofiles
 import aiohttp
-from yookassa import Payment
-
 import config
+from yookassa import Payment
 
 
 def get_payment():

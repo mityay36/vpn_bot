@@ -1,7 +1,7 @@
 import logging
 from functools import wraps
 
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import CallbackQuery, Message
 
 logger = logging.getLogger(__name__)
 

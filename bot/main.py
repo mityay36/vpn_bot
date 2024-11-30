@@ -3,24 +3,17 @@ import json
 import logging
 import os
 
+import config
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from aiogram.types import (
-    Message, ReplyKeyboardMarkup,
-    KeyboardButton, FSInputFile,
-    InputMediaPhoto, BotCommand,
-    BotCommandScopeDefault, CallbackQuery,
-    InlineKeyboardButton
-)
+from aiogram.types import (BotCommand, BotCommandScopeDefault, CallbackQuery,
+                           FSInputFile, InlineKeyboardButton, InputMediaPhoto,
+                           KeyboardButton, Message, ReplyKeyboardMarkup)
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from yookassa import Payment, Configuration
+from logic import get_data, get_file_from_data, get_payment, get_tunnel_list
+from yookassa import Configuration, Payment
 
-import config
-from logic import (
-    get_tunnel_list, get_payment,
-    get_data, get_file_from_data
-)
 # from log import log_user_activity, UserContextFilter
 
 
@@ -69,7 +62,6 @@ async def start_command(message: Message):
 
 
 @dp.message(Command("start"))
-
 async def start_command(message: Message):
 
     keyboard = ReplyKeyboardMarkup(

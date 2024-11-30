@@ -1,7 +1,4 @@
-import asyncio
-import json
 import uuid
-from datetime import datetime
 
 import aiofiles
 import aiohttp
@@ -80,7 +77,7 @@ async def get_tunnel_list(username):
 
     if 'Error' in tunnels:
         return False
-    
+
     out = []
     for tunnel in tunnels:
         if tunnel['Status'] == 'Paid':

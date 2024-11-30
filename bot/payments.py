@@ -43,8 +43,10 @@ def generate_payment_link(
     cost: decimal,  # Cost of goods, RU
     number: int,  # Invoice number
     description: str,  # Description of the purchase
-    is_test=0,
-    robokassa_payment_url = 'https://auth.robokassa.ru/Merchant/Index.aspx',
+    is_test: int = 0,
+    robokassa_payment_url: str = '''
+    https://auth.robokassa.ru/Merchant/Index.aspx
+    ''',
 ) -> str:
     """URL for redirection of the customer to the service.
     """
@@ -85,7 +87,9 @@ def result_payment(merchant_password_2: str, request: str) -> str:
 # Проверка параметров в скрипте завершения операции (SuccessURL).
 
 def check_success_payment(merchant_password_1: str, request: str) -> str:
-    """ Verification of operation parameters ("cashier check") in SuccessURL script.
+    """
+    Verification of operation parameters ("cashier check")
+    in SuccessURL script.
     :param request: HTTP parameters
     """
     param_request = parse_response(request)

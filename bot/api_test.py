@@ -1,9 +1,7 @@
-import json
 import asyncio
 
-import config
-from logic import get_data
-
+import bot.config as config
+from bot.logic import get_data
 
 
 async def get_tunnel_list(username: str):
@@ -11,7 +9,7 @@ async def get_tunnel_list(username: str):
 
     if 'Error' in tunnels:
         return False
-    
+
     out = []
     for tunnel in tunnels:
         if tunnel['Status'] == 'Paid':
@@ -21,8 +19,6 @@ async def get_tunnel_list(username: str):
         out.append((tunnel['Name'], status))
 
     return print(out)
-
-
 
 
 # Configuration.account_id = str(config.MARKET_ID)

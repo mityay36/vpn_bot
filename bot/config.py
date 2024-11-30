@@ -11,7 +11,7 @@ CONTACT = os.getenv('CONTACT')
 CONTACT_CHANELL = os.getenv('CONTACT_CHANELL')
 PRICE = int(os.getenv('PRICE'))
 PRICE_LABELED = types.LabeledPrice(
-    label="Подписка на 1 месяц", amount=PRICE*100
+    label="Подписка на 1 месяц", amount=PRICE * 100
 )
 URL = os.getenv('URL')
 URL2 = os.getenv('URL2')
@@ -22,3 +22,5 @@ GET_PEER_LIST = os.getenv('GET_PEER_LIST')
 SET_PEER = os.getenv('SET_PEER')
 EXTEND_PEER = os.getenv('EXTEND_PEER')
 SLEEP_TIME = int(os.getenv('SLEEP_TIME'))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PHOTO_DIR = os.path.join(BASE_DIR, 'photos')

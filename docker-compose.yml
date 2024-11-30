@@ -3,9 +3,7 @@ version: '3'
 services:
 
   tele_bot:
-    build:
-      context: bot
-      dockerfile: Dockerfile
+    image: mityay36/foodgram_backend
     env_file: .env
     volumes:
       - /bot_logs:/bot/logs

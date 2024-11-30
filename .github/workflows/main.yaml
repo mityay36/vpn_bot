@@ -1,4 +1,4 @@
-name: Main Foodgram workflow
+name: Main wg_bot workflow
 on: push
 jobs:
   tests:
@@ -68,7 +68,7 @@ jobs:
         script: |
           # Удаляет неиспользуемые контейнеры, изображения и сети
           sudo docker system prune -a --force
-          cd foodgram
+          cd vpn_bot
           # Останавливает все контейнеры в docker compose
           sudo docker compose -f docker-compose.production.yml down
           # Выполняет pull образов DockerHub

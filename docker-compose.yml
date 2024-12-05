@@ -2,6 +2,7 @@ version: '3'
 
 volumes:
   bot_logs:
+  configs:
 
 services:
   tele_bot:
@@ -9,3 +10,4 @@ services:
     env_file: .env
     volumes:
       - /root/bot_logs:/bot/logs
+      - /root/configs:/bot/configs

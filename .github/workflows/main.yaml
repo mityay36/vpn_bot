@@ -67,11 +67,11 @@ jobs:
         passphrase: ${{ secrets.SSH_PASSPHRASE }}
         script: |
           cd /root/vpn_bot
-          sudo docker compose -f docker-compose.yml pull
-          # Перезапускает все контейнеры в docker compose
-          sudo docker compose -f docker-compose.yml down
-          sudo docker compose -f docker-compose.yml up -d
-          sudo docker system prune
+            sudo docker compose -f docker-compose.yml pull
+            # Перезапускает все контейнеры в docker compose
+            sudo docker compose -f docker-compose.yml down
+            sudo docker compose -f docker-compose.yml up -d
+            sudo docker system prune
 
   send_message:
     runs-on: ubuntu-latest

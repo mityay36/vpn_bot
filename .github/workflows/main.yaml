@@ -66,6 +66,7 @@ jobs:
         key: ${{ secrets.SSH_KEY }}
         passphrase: ${{ secrets.SSH_PASSPHRASE }}
         script: |
+          cd /root/vpn_bot
           # Удаляет неиспользуемые контейнеры, изображения и сети
           sudo docker system prune -a --force
           cd vpn_bot

@@ -8,4 +8,4 @@ services:
     image: mityay36/wg_bot_backend
     env_file: .env
     volumes:
-      - /bot_logs:/root/vpn_bot/logs
+      - /root/bot_logs:/bot/logs

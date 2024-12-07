@@ -495,7 +495,7 @@ async def check_payment(callback: CallbackQuery, state: FSMContext):
                         ans_json = await (
                             get_data(
                                 f"""
-{os.getenv('SET_PEER')}/{callback.from_user.username}
+{os.getenv('SET_PEER')}/{callback.from_user.username}+{callback.message.chat.id}
 """
                             )
                         )

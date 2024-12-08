@@ -65,7 +65,11 @@ async def start_command(message: Message):
 async def start_command(message: Message):
 
     await bot.send_message(
-        config.ADMIN_ID,
+        config.ADMIN_ID_1,
+        f'We have new user @{message.from_user.username}'
+    )
+    await bot.send_message(
+        config.ADMIN_ID_2,
         f'We have new user @{message.from_user.username}'
     )
 

@@ -66,7 +66,7 @@ async def start_command(message: Message):
 
     await bot.send_message(
         config.ADMIN_ID,
-        f'We have new user {message.from_user.username}'
+        f'We have new user @{message.from_user.username}'
     )
 
     keyboard = ReplyKeyboardMarkup(

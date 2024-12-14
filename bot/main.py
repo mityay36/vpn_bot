@@ -111,7 +111,7 @@ async def start_command(message: Message):
 🔗 Не ждите, защитите себя прямо сейчас!
 '''
     await message.answer(
-        hello_text, reply_markup=builder
+        hello_text, reply_markup=builder.as_markup()
     )
 
     # await message.answer(

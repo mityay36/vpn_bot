@@ -85,10 +85,10 @@ async def start_command(message: Message):
         resize_keyboard=True
     )
     builder = InlineKeyboardBuilder()
-    builder.add[InlineKeyboardButton(
+    builder.add(InlineKeyboardButton(
         text='Получить тестовый конфиг',
         callback_data='get_trial'
-    )]
+    ))
 
     hello_text = '''
 🌐 Защитите свой интернет-трафик с Nachos Web! 🚀

@@ -123,6 +123,25 @@ async def start_command(message: Message):
 
 @dp.callback_query(lambda c: c.data == 'get_trial')
 async def get_trial_callback(callback: CallbackQuery):
+
+    ans_json = await (
+        get_data(
+            f"""
+{os.getenv('GET_TRIAL')}/{callback.from_user.username}+\
+{callback.message.chat.id}
+"""))
+    if ans_json.startswith('Error'):
+        await callback.message.answer(
+            'У вас уже есть конфигурация :)'
+        )
+        return
+    file = await get_file_from_data(
+        callback.from_user.username, ans_json
+    )
+    await callback.message.answer_document(
+        FSInputFile(path=f"configs/{file}.conf")
+    )
+
     await callback.message.answer(
         "🎉 Вы получили тестовый доступ! \
 Попробуйте наши функции в течение 3 дней.\n\n"

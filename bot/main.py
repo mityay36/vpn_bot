@@ -3,7 +3,6 @@ import json
 import logging
 import os
 
-import config
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
@@ -11,8 +10,10 @@ from aiogram.types import (BotCommand, BotCommandScopeDefault, CallbackQuery,
                            FSInputFile, InlineKeyboardButton, InputMediaPhoto,
                            KeyboardButton, Message, ReplyKeyboardMarkup)
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from logic import get_data, get_file_from_data, get_payment, get_tunnel_list
 from yookassa import Configuration, Payment
+
+import config
+from logic import get_data, get_file_from_data, get_payment, get_tunnel_list
 
 # from log import log_user_activity, UserContextFilter
 
@@ -86,8 +87,8 @@ async def start_command(message: Message):
     )
     builder = InlineKeyboardBuilder()
     builder.add[InlineKeyboardButton(
-        text = 'Получить тестовый конфиг',
-        callback_data = 'get_trial'
+        text='Получить тестовый конфиг',
+        callback_data='get_trial'
     )]
 
     hello_text = '''
@@ -124,17 +125,21 @@ async def start_command(message: Message):
 @dp.callback_query(lambda c: c.data == 'get_trial')
 async def get_trial_callback(callback: CallbackQuery):
     await callback.message.answer(
-        "🎉 Вы получили тестовый доступ! Попробуйте наши функции в течение 3 дней.\n\n"
-        "Если у вас есть вопросы, обратитесь в техподдержку. Будем рады помочь!🌝"
+        "🎉 Вы получили тестовый доступ! \
+Попробуйте наши функции в течение 3 дней.\n\n"
+        "Если у вас есть вопросы, обратитесь \
+в техподдержку. Будем рады помочь!🌝"
     )
 
     await bot.send_message(
         config.ADMIN_ID_1,
-        f'Пользователь [@{callback.from_user.username}, {callback.message.chat.id}] активировал триал.'
+        f'Пользователь [@{callback.from_user.username}, \
+{callback.message.chat.id}] активировал триал.'
     )
     await bot.send_message(
         config.ADMIN_ID_2,
-        f'Пользователь [@{callback.from_user.username}, {callback.message.chat.id}] активировал триал.'
+        f'Пользователь [@{callback.from_user.username}, \
+{callback.message.chat.id}] активировал триал.'
     )
 
     await callback.answer()

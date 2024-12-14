@@ -114,11 +114,11 @@ async def start_command(message: Message):
         hello_text, reply_markup=builder.as_markup()
     )
 
-    # await message.answer(
-    #     "Выберите дальнейшую команду:", reply_markup=keyboard
-    # )
+    await message.answer(
+        "Выберите дальнейшую команду:", reply_markup=keyboard
+    )
 
-    await message.answer(reply_markup=keyboard)
+    # await message.answer(reply_markup=keyboard)
 
 
 @dp.callback_query(lambda c: c.data == 'get_trial')

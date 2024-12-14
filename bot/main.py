@@ -130,7 +130,7 @@ async def get_trial_callback(callback: CallbackQuery):
 {os.getenv('GET_TRIAL')}/{callback.from_user.username}+\
 {callback.message.chat.id}
 """))
-    if ans_json.startswith('Error'):
+    if ans_json == 'Error: 401':
         await callback.message.answer(
             'У вас уже есть конфигурация :)'
         )

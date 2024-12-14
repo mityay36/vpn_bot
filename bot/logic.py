@@ -83,4 +83,3 @@ async def get_tunnel_list(username):
         out.append((tunnel['Name'], status))
 
     return out
-
